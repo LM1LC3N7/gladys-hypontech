@@ -1,45 +1,58 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
-//
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// The configuration the user fills (manifest `config_schema`), normalized:
+// the account of the Hypon cloud portal (username, password, OEM portal),
+// which devices carry the production index, the optional peak power and the
+// pace. The password never leaves this object but for the login request.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
-export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
-};
+import { INDEX_SOURCES, OEMS, POLL_DEFAULT_MIN, POLL_MAX_MIN, POLL_MIN_MIN } from './constants.js';
+
+const text = (value, max) => (typeof value === 'string' && value.length <= max ? value.trim() : '');
+
+/** A number typed as a number or as text ("3,5"), else undefined. */
+function numberOf(raw) {
+  const value = typeof raw === 'string' ? raw.trim().replace(',', '.') : raw;
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+  if (typeof value === 'string' && !/^\d{1,4}(\.\d{1,3})?$/.test(value)) {
+    return undefined;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
 
 /**
- * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * The optional peak power of the installation (kWp, manifest `peak_power_kw`):
+ * a number from 0.1 to 1000, else undefined (the default margin is then used).
  */
+export function peakOf(raw) {
+  const value = numberOf(raw);
+  return value !== undefined && value >= 0.1 && value <= 1000 ? value : undefined;
+}
+
+/** The minutes between two reads: POLL_MIN_MIN to POLL_MAX_MIN, POLL_DEFAULT_MIN otherwise. */
+export function pollOf(raw) {
+  const value = numberOf(raw);
+  if (value === undefined) {
+    return POLL_DEFAULT_MIN;
+  }
+  return Math.min(POLL_MAX_MIN, Math.max(POLL_MIN_MIN, Math.round(value)));
+}
+
 export function normalizeConfig(raw = {}) {
+  const oem = Number(typeof raw?.oem === 'string' ? raw.oem.trim() : raw?.oem);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    // Kept as typed but for the spaces around it (a login name or an e-mail address).
+    username: text(raw?.username, 254),
+    // Never trimmed: a password may start or end with a space.
+    password: typeof raw?.password === 'string' && raw.password.length <= 256 ? raw.password : '',
+    oem: OEMS.includes(oem) ? oem : 0,
+    indexSource: INDEX_SOURCES.includes(raw?.index_source) ? raw.index_source : 'plant',
+    peakKw: peakOf(raw?.peak_power_kw),
+    pollMinutes: pollOf(raw?.poll_minutes),
   };
 }
+
+/** Whether the form is complete enough to log in. */
+export const isComplete = (config) => Boolean(config.username && config.password);

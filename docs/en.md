@@ -1,61 +1,93 @@
-# Demo Devices Template
+# Hypontech (Hypon cloud)
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+**Unofficial** connector, not affiliated with Hypontech. It reads your Hypon
+cloud account (the one of the Hypontech app and of hypon.cloud), **read-only**,
+and gives Gladys your Hypontech micro-inverters, plants and batteries. It never
+sends a command.
+
+**Never tested with a real device** nor with a real account: the Hypon cloud
+API is not documented; it is read as the
+[hyponcloud](https://github.com/jcisio/hyponcloud) library (the one of the Home
+Assistant integration) reads it. Feedback is welcome on the GitHub repository.
 
 ## What you get
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+For each **plant** of your account:
+
+- the solar power (W) and the energy of the day (kWh);
+- a **solar production index** for the Gladys energy monitoring (see below);
+- the power exchanged with the grid, the home consumption, the battery charge
+  and power, when the cloud gives them for this plant.
+
+For each **inverter**: power, energy of the day, online, fault, warning. At
+night an offline micro-inverter goes to 0 W; its counters keep their last
+value.
+
+For each **battery**: charge (%) and number of cycles.
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+1. Install the integration from the Gladys store.
+2. Enter the **username** and the **password** of your Hypon account (the ones
+   of the Hypontech app). The password is kept by Gladys in its database,
+   never shown again, and sent only to the Hypon cloud (`api.hypon.cloud`). It
+   is never logged, nor the username, nor the session token.
+3. **Portal**: Hypontech for almost everyone; EAS Solar or Nexen if your
+   installer gave you their portal.
+4. **Production index**: on the plants (default), on each inverter, or none.
+   Never both: the production would be counted twice. Choose "None" if another
+   meter (a production meter, a smart plug, another integration) already
+   counts this production in Gladys.
+5. **Peak power** (optional): the one of your largest plant, on the installer's
+   invoice. It bounds what the index may take between two reads. Empty: 60 kW.
+   Never enter less than the real value.
+6. **Read every**: 5 minutes by default (2 to 60). Each read makes about four
+   requests per plant; the cloud itself is only updated every few minutes.
+7. Open the **Discover** tab and create the devices you want. Their values come
+   at the next read.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+## The production index
 
-## Actions
+The cloud gives, for each plant and each inverter, the energy produced since
+it was put into service. Gladys counts every rise of this index as production.
+So that an odd value is never counted:
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+- an index of 0 is never sent;
+- a plausible rise (no more than the peak power × the time elapsed) goes through;
+- a **jump** or a **drop** is **held back**: the last accepted value is sent
+  again, the status of the integration shows it, and it stays held across a
+  restart. Neither time nor repetition confirms it;
+- to take it, click **"Accept the held index"**: the first click lists the
+  values held and accepts nothing; a second click within 5 minutes accepts
+  exactly these values, counted at once at the next read. A value that changed
+  meanwhile stays held. Saving the configuration never accepts anything.
 
-## Scenes
+To change the level of the index later: save the configuration, then "Update"
+the devices in the Discover tab. A device keeps the index it had (its history
+is never deleted), without new values.
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+## Pace, pauses and refusals
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- Never two reads less than an interval apart, even after a restart, a
+  reconnection, a save of the configuration or a click on "Test the
+  connection" (the time of the last read is kept in `/data`).
+- One login (token) per hour of reads; never a login loop.
+- If the cloud asks to wait (429, or a 5xx error), the reads pause from 1
+  minute to 6 hours, kept across a restart.
+- If the cloud **refuses the username or the password**, nothing more is sent
+  with them, even after a restart. Save the right ones, or click "Test the
+  connection" for one more try (never sooner than the interval). The refusal is
+  erased only by a login that works.
+- `/data` never keeps the password, the username nor the token: only the time
+  of the last read, a pause, the salted fingerprint of refused credentials
+  (erased at the first success) and the state of the indexes.
 
-## Dashboard
+## Known limits
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
-
-## Troubleshooting
-
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- The cloud API is not documented: it may change without notice.
+- The sign of the grid power and of the battery power is the one the cloud
+  gives; it could not be checked.
+- A plant the cloud has not updated for more than 2 hours (gateway offline) no
+  longer sends its power.
+- At most 10 plants and 100 inverters or batteries per plant are read.
+- No Bluetooth, no local access to the gateway.

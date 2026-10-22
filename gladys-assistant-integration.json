@@ -1,177 +1,141 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Hypontech",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Unofficial: Hypontech inverters and batteries via the Hypon cloud: power, energy, index.",
+    "fr": "Non officiel : onduleurs et batteries Hypontech via le cloud Hypon : puissance, énergie, index."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-hypontech:0.1.0",
+  "gladys_version": ">=5.2.0",
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-hypontech/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": { "en": "Hypon cloud account", "fr": "Compte du cloud Hypon" },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Unofficial connector, not affiliated with Hypontech. It reads your Hypon cloud account (the one of the Hypontech app and of hypon.cloud), read only, every 5 minutes by default: for each plant its solar power, energy of the day and a solar production index for the Gladys energy monitoring (the lifetime total of the cloud, checked before it is counted), the grid and home power and the battery when the cloud gives them; each micro-inverter and battery as its own device. It never sends a command. The password is kept by Gladys in its database, never shown again, and sent only to the Hypon cloud (api.hypon.cloud); it is never logged, nor the username. The cloud API is not documented: never tested with a real account.",
+        "fr": "Connecteur non officiel, sans lien avec Hypontech. Il lit votre compte du cloud Hypon (celui de l'application Hypontech et de hypon.cloud), en lecture seule, toutes les 5 minutes par défaut : pour chaque centrale sa puissance solaire, son énergie du jour et un index de production solaire pour le suivi énergétique de Gladys (le total depuis la mise en service donné par le cloud, vérifié avant d'être compté), la puissance du réseau, de la maison et la batterie quand le cloud les donne ; chaque micro-onduleur et chaque batterie comme un appareil. Il n'envoie jamais de commande. Le mot de passe est gardé par Gladys dans sa base, jamais réaffiché, et envoyé uniquement au cloud Hypon (api.hypon.cloud) ; il n'est jamais journalisé, pas plus que l'identifiant. L'API du cloud n'est pas documentée : jamais testé avec un vrai compte."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/LM1LC3N7/gladys-hypontech/blob/main/docs/fr.md",
+          "label": { "en": "Guide (French)", "fr": "Guide (français)" }
+        },
+        {
+          "url": "https://github.com/LM1LC3N7/gladys-hypontech/blob/main/docs/en.md",
+          "label": { "en": "Guide (English)", "fr": "Guide (anglais)" }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "key": "username",
+      "type": "string",
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "label": { "en": "Username", "fr": "Identifiant" },
+      "description": {
+        "en": "The username (or e-mail address) of your Hypon cloud account, as in the Hypontech app. Never logged.",
+        "fr": "L'identifiant (ou l'adresse e-mail) de votre compte du cloud Hypon, comme dans l'application Hypontech. Jamais journalisé."
+      },
+      "placeholder": { "en": "e.g. name@example.com", "fr": "ex. nom@exemple.fr" }
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
+      "key": "password",
+      "type": "secret",
       "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "label": { "en": "Password", "fr": "Mot de passe" },
+      "description": {
+        "en": "Kept by Gladys in its database, never shown again, sent only to the Hypon cloud. If the cloud refuses it, nothing more is sent with it: save the right one, or use the test button for one more try.",
+        "fr": "Gardé par Gladys dans sa base, jamais réaffiché, envoyé uniquement au cloud Hypon. Si le cloud le refuse, plus rien n'est envoyé avec lui : enregistrez le bon, ou utilisez le bouton de test pour un nouvel essai."
+      }
     },
     {
-      "key": "unit",
+      "key": "oem",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
       "required": false,
-      "default": "celsius",
+      "default": "0",
+      "label": { "en": "Portal", "fr": "Portail" },
+      "description": {
+        "en": "The brand of the portal of your account: Hypontech for almost everyone; EAS Solar or Nexen if your installer gave you their portal.",
+        "fr": "La marque du portail de votre compte : Hypontech pour presque tout le monde ; EAS Solar ou Nexen si votre installateur vous a donné leur portail."
+      },
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "0",
+          "label": { "en": "Hypontech (hypon.cloud)", "fr": "Hypontech (hypon.cloud)" }
+        },
+        { "value": "3", "label": { "en": "EAS Solar", "fr": "EAS Solar" } },
+        { "value": "4", "label": { "en": "Nexen", "fr": "Nexen" } }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
-      },
+      "key": "index_source",
+      "type": "select",
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "plant",
+      "label": { "en": "Production index", "fr": "Index de production" },
+      "description": {
+        "en": "Which devices carry the solar production index the Gladys energy monitoring counts: the plants (default), or each inverter, never both (the production would be counted twice). Choose \"None\" if another meter (a production meter, a smart plug) already counts this production in Gladys. Changing it later: use \"Update\" in the Discover tab; a device keeps the index it had, without new values.",
+        "fr": "Quels appareils portent l'index de production solaire que compte le suivi énergétique de Gladys : les centrales (par défaut), ou chaque onduleur, jamais les deux (la production serait comptée deux fois). Choisissez « Aucun » si un autre compteur (compteur de production, prise connectée) compte déjà cette production dans Gladys. Pour changer plus tard : « Mettre à jour » dans l'onglet Découverte ; un appareil garde l'index qu'il avait, sans nouvelles valeurs."
+      },
+      "options": [
+        { "value": "plant", "label": { "en": "Plants", "fr": "Centrales" } },
+        { "value": "inverters", "label": { "en": "Each inverter", "fr": "Chaque onduleur" } },
+        { "value": "none", "label": { "en": "None", "fr": "Aucun" } }
+      ]
+    },
+    {
+      "key": "peak_power_kw",
+      "type": "number",
+      "required": false,
+      "min": 0.1,
+      "max": 1000,
+      "label": {
+        "en": "Peak power of the largest plant (kWp, optional)",
+        "fr": "Puissance crête de la plus grande centrale (kWc, facultatif)"
+      },
+      "description": {
+        "en": "The peak power of your panels (on the installer's invoice). It bounds what the production index may take between two reads (an odd total is held back instead). Empty: 60 kW. Never enter less than the real peak power: in doubt, leave it empty.",
+        "fr": "La puissance crête de vos panneaux (sur la facture de l'installateur). Elle borne ce que l'index de production peut prendre entre deux lectures (un total aberrant est retenu). Vide : 60 kW. Ne saisissez jamais moins que la vraie puissance crête : dans le doute, laissez vide."
+      },
+      "placeholder": { "en": "e.g. 3", "fr": "ex. 3" }
+    },
+    {
+      "key": "poll_minutes",
+      "type": "number",
+      "required": false,
+      "default": 5,
+      "min": 2,
+      "max": 60,
+      "label": { "en": "Read every (minutes)", "fr": "Lecture toutes les (minutes)" },
+      "description": {
+        "en": "Minutes between two reads of the cloud (2 to 60, 5 by default). Each read makes about four requests per plant; the cloud itself is updated every few minutes.",
+        "fr": "Minutes entre deux lectures du cloud (2 à 60, 5 par défaut). Chaque lecture fait environ quatre requêtes par centrale ; le cloud lui-même n'est mis à jour que toutes les quelques minutes."
+      }
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
+      "key": "test_connection",
+      "timeout_seconds": 30,
+      "label": { "en": "Test the connection", "fr": "Tester la connexion" },
+      "description": {
+        "en": "Reads the cloud if a read is due (also one more try after a refused login), otherwise tells the last read. Never sooner than the interval.",
+        "fr": "Lit le cloud si une lecture est due (aussi un nouvel essai après une connexion refusée), sinon donne la dernière lecture. Jamais avant l'intervalle."
+      }
     },
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "accept_held_index",
+      "timeout_seconds": 30,
+      "label": { "en": "Accept the held index", "fr": "Accepter l'index retenu" },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
-      },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
-      },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
-    }
-  ],
-  "widgets": [
-    {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
-      },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+        "en": "Only when the status shows a production index held back and this energy was real. First click: lists the values held, accepts nothing. Second click within 5 minutes: accepts exactly the values listed, counted at once at the next read. Saving the configuration never accepts anything.",
+        "fr": "Seulement quand l'état affiche un index de production retenu et que cette énergie est réelle. Premier clic : liste les valeurs retenues, n'accepte rien. Second clic dans les 5 minutes : accepte exactement les valeurs listées, comptées d'un coup à la prochaine lecture. Enregistrer la configuration n'accepte jamais rien."
+      }
     }
   ]
 }
