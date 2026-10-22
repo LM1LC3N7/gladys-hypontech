@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-22
+
 ### Added
 
 - Hypontech micro-inverters, plants and batteries through the Hypon cloud
@@ -33,4 +35,5 @@ the notes of the version's GitHub Release.
   to 6 h, kept in /data); never two reads less than an interval apart, even
   after a restart.
 
-[Unreleased]: https://github.com/LM1LC3N7/gladys-hypontech/commits/main
+[Unreleased]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-hypontech/releases/tag/v0.1.1
