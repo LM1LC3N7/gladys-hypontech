@@ -48,7 +48,8 @@ export function normalizeConfig(raw = {}) {
     // Never trimmed: a password may start or end with a space.
     password: typeof raw?.password === 'string' && raw.password.length <= 256 ? raw.password : '',
     oem: OEMS.includes(oem) ? oem : 0,
-    indexSource: INDEX_SOURCES.includes(raw?.index_source) ? raw.index_source : 'plant',
+    // Each inverter by default (review 1, B1): its own total, no plant sum to trust.
+    indexSource: INDEX_SOURCES.includes(raw?.index_source) ? raw.index_source : INDEX_SOURCES[0],
     peakKw: peakOf(raw?.peak_power_kw),
     pollMinutes: pollOf(raw?.poll_minutes),
   };

@@ -60,8 +60,8 @@ const withNotes = (first, notes) => ({
 const heldLine = ({ label, direction, from, to }) =>
   direction === 'down'
     ? {
-        en: `${label}: ${kwh(from)} -> ${kwh(to)} kWh (a drop: nothing counted)`,
-        fr: `${label} : ${kwh(from)} -> ${kwh(to)} kWh (une baisse : rien de compté)`,
+        en: `${label}: ${kwh(from)} -> ${kwh(to)} kWh (a drop: never accepted, the index goes on by itself when the total comes back)`,
+        fr: `${label} : ${kwh(from)} -> ${kwh(to)} kWh (une baisse : jamais acceptée, l’index reprend seul quand le total revient)`,
       }
     : {
         en: `${label}: ${kwh(from)} -> ${kwh(to)} kWh (+${kwh(to - from)} kWh counted at once)`,
@@ -78,9 +78,13 @@ export const T = {
     en: 'Enter the username and the password of your Hypon cloud account (the ones of the Hypontech app or web portal).',
     fr: 'Saisissez l’identifiant et le mot de passe de votre compte du cloud Hypon (ceux de l’application ou du portail web Hypontech).',
   },
-  refused: {
-    en: 'The Hypon cloud refused the login (username, password or portal wrong): nothing more is sent with these credentials. Check them in the Hypontech app, then save the right ones; or click "Test the connection" for one more try (never sooner than the interval).',
-    fr: 'Le cloud Hypon a refusé la connexion (identifiant, mot de passe ou portail erroné) : plus rien n’est envoyé avec ces identifiants. Vérifiez-les dans l’application Hypontech, puis enregistrez les bons ; ou cliquez sur « Tester la connexion » pour un nouvel essai (jamais avant l’intervalle).',
+  /** `status`: the HTTP status of the refusal, when there was one. */
+  refused: (status) => {
+    const http = Number.isInteger(status) ? ` (HTTP ${status})` : '';
+    return {
+      en: `The Hypon cloud refused the login${http} (username, password or portal wrong): nothing more is sent with these credentials. Check them in the Hypontech app, then save the right ones; or click "Test the connection" for one more try (never sooner than the interval).`,
+      fr: `Le cloud Hypon a refusé la connexion${http} (identifiant, mot de passe ou portail erroné) : plus rien n’est envoyé avec ces identifiants. Vérifiez-les dans l’application Hypontech, puis enregistrez les bons ; ou cliquez sur « Tester la connexion » pour un nouvel essai (jamais avant l’intervalle).`,
+    };
   },
   /** `notes`: { en, fr } texts added after the failure (an index held back). */
   unreachable: (err, wait, notes = []) =>
@@ -135,8 +139,20 @@ export const T = {
       fr: `${count} élément(s) sans identifiant utilisable dans le cloud : pas d’appareil pour eux.`,
     }),
     stale: (count) => ({
-      en: `${count} plant(s) not updated by the cloud for more than 2 h (gateway offline?): their power is not sent.`,
-      fr: `${count} centrale(s) non mise(s) à jour par le cloud depuis plus de 2 h (passerelle hors ligne ?) : leur puissance n’est pas envoyée.`,
+      en: `${count} plant(s) not updated by the cloud for more than 2 h (gateway offline?): their live values and those of their inverters are not sent.`,
+      fr: `${count} centrale(s) non mise(s) à jour par le cloud depuis plus de 2 h (passerelle hors ligne ?) : leurs valeurs en direct et celles de leurs onduleurs ne sont pas envoyées.`,
+    }),
+    plantIncomplete: (count) => ({
+      en: `${count} plant total(s) below the sum of their inverters (an inverter offline or not read?): not counted this time, nothing lost, the index goes on when the total is complete.`,
+      fr: `${count} total(aux) de centrale inférieur(s) à la somme de leurs onduleurs (un onduleur hors ligne ou non lu ?) : non compté cette fois, rien de perdu, l’index reprend quand le total est complet.`,
+    }),
+    retired: (count, since) => ({
+      en: `The production index of ${count} device(s) was stopped on ${new Date(since).toISOString().slice(0, 10)} (the "Production index" setting changed): it never receives values again, so that nothing is counted twice. To resume it, delete the device and create it again from the Discover tab.`,
+      fr: `L’index de production de ${count} appareil(s) a été arrêté le ${new Date(since).toISOString().slice(0, 10)} (réglage « Index de production » changé) : il ne reçoit plus jamais de valeur, pour que rien ne soit compté deux fois. Pour le reprendre, supprimez l’appareil et recréez-le depuis l’onglet Découverte.`,
+    }),
+    indexMissing: (source) => ({
+      en: `None of the created ${source === 'plant' ? 'plants' : 'inverters'} carries the production index: click "Update" on them in the Discover tab.`,
+      fr: `Aucun(e) ${source === 'plant' ? 'centrale' : 'onduleur'} créé(e) ne porte l’index de production : cliquez sur « Mettre à jour » dans l’onglet Découverte.`,
     }),
     budget: {
       en: 'Many values: some are sent at the next read (at most 280 values a minute).',
@@ -147,8 +163,8 @@ export const T = {
       fr: 'Pas d’index de production : la configuration indique qu’un autre compteur compte la production.',
     },
     held: (items) => ({
-      en: `Production index held back, not sent to the energy monitoring: ${lines(items).en}. If this energy was real, click "Accept the held index" twice in the configuration of the integration; saving the configuration accepts nothing.`,
-      fr: `Index de production retenu, non envoyé au suivi énergétique : ${lines(items).fr}. Si cette énergie est réelle, cliquez deux fois sur « Accepter l’index retenu » dans la configuration de l’intégration ; enregistrer la configuration n’accepte rien.`,
+      en: `Production index held back, not sent to the energy monitoring: ${lines(items).en}.${items.some((i) => i.direction === 'up') ? ' For a jump: if this energy was real, click "Accept the held index" twice in the configuration of the integration.' : ''} Saving the configuration accepts nothing.`,
+      fr: `Index de production retenu, non envoyé au suivi énergétique : ${lines(items).fr}.${items.some((i) => i.direction === 'up') ? ' Pour un saut : si cette énergie est réelle, cliquez deux fois sur « Accepter l’index retenu » dans la configuration de l’intégration.' : ''} Enregistrer la configuration n’accepte rien.`,
     }),
   },
   accept: {
@@ -156,10 +172,15 @@ export const T = {
       en: 'No index is held back: nothing to accept.',
       fr: 'Aucun index n’est retenu : rien à accepter.',
     },
-    /** First click: what a second click would take, nothing taken yet. */
-    list: (items, within) => ({
-      en: `Held back: ${lines(items).en}. Nothing accepted yet: click "Accept the held index" again within ${delay(within).en} to accept exactly these values (counted at the next read). A value that changes meanwhile stays held.`,
-      fr: `Retenu : ${lines(items).fr}. Rien n’est encore accepté : cliquez à nouveau sur « Accepter l’index retenu » dans les ${delay(within).fr} pour accepter exactement ces valeurs (comptées à la prochaine lecture). Une valeur qui change d’ici là reste retenue.`,
+    /** A drop of a production total: never accepted (review 1, I1). */
+    drop: {
+      en: 'The index held back is a drop: it is never accepted, the index goes on by itself when the total of the cloud comes back. An inverter removed or replaced: choose "Each inverter" for the production index. Nothing to accept.',
+      fr: 'L’index retenu est une baisse : elle n’est jamais acceptée, l’index reprend seul quand le total du cloud revient. Un onduleur retiré ou remplacé : choisissez « Chaque onduleur » pour l’index de production. Rien à accepter.',
+    },
+    /** First click: what a second click would take, nothing taken yet. `drops`: drops held, never taken. */
+    list: (items, within, drops = 0) => ({
+      en: `Held back: ${lines(items).en}. Nothing accepted yet: click "Accept the held index" again within ${delay(within).en} to accept exactly these values (counted at the next read). A value that changes meanwhile stays held: by day a held value may change at each read, so click twice between two reads.${drops > 0 ? ` ${drops} drop(s) also held: never accepted, they correct themselves.` : ''}`,
+      fr: `Retenu : ${lines(items).fr}. Rien n’est encore accepté : cliquez à nouveau sur « Accepter l’index retenu » dans les ${delay(within).fr} pour accepter exactement ces valeurs (comptées à la prochaine lecture). Une valeur qui change d’ici là reste retenue : de jour, une valeur retenue peut changer à chaque lecture, cliquez donc deux fois entre deux lectures.${drops > 0 ? ` ${drops} baisse(s) aussi retenue(s) : jamais acceptée(s), elle(s) se corrige(nt) seule(s).` : ''}`,
     }),
     /** Second click. */
     done: (taken, changed) => ({

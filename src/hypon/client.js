@@ -36,7 +36,7 @@ export class HyponError extends Error {
   /**
    * @param {'timeout'|'unreachable'|'http'|'not_found'|'server'|'rate_limited'|'too_large'|
    *   'redirect'|'bad_answer'|'refused'|'unauthorized'|'forbidden'} code
-   * `refused`: the login was refused (401/403, or no token in its answer):
+   * `refused`: the login was refused (a 4xx but 408 and 429, or no token in its answer):
    * final, nothing more is sent with these credentials.
    */
   constructor(code, { status, retryAfter } = {}) {
@@ -206,7 +206,9 @@ export class HyponClient {
         body: JSON.stringify({ username: this.username, password: this.password, oem: this.oem }),
       });
     } catch (err) {
-      if (err.code === 'http' && (err.status === 401 || err.status === 403)) {
+      // Any 4xx but 408 (a timeout) and 429 (paused elsewhere) is a refusal
+      // of the login: final, never tried again in a loop (review 1, I4).
+      if (err.code === 'http' && err.status >= 400 && err.status < 500 && err.status !== 408) {
         throw new HyponError('refused', { status: err.status });
       }
       throw err;

@@ -168,8 +168,10 @@ export function parseMonitor(data) {
     batteryPower,
     soc,
     has: {
-      grid: gridPower !== undefined,
-      load: loadPower !== undefined,
+      // Only once a value other than 0 was seen (review 1, m5): a plant
+      // without meter gives 0 for both, forever.
+      grid: gridPower !== undefined && gridPower !== 0,
+      load: loadPower !== undefined && loadPower !== 0,
       // A battery: its charge or its power was ever above 0 (a plant without
       // battery gives 0 for both).
       battery: (soc !== undefined && soc > 0) || (batteryPower !== undefined && batteryPower !== 0),

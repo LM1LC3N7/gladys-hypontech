@@ -9,7 +9,7 @@
 // - `production_index` is the ONLY energy-production-sensor / index feature:
 //   the lifetime total the cloud gives (`e_total`), checked by the guard
 //   (src/guard.js), never 0. It is declared on ONE level only, chosen in the
-//   configuration (`index_source`): the plants (default), the inverters, or
+//   configuration (`index_source`): the inverters (default), the plants, or
 //   none (another meter already counts the production): never both, the
 //   production would be counted twice. Its `thirty-minutes-production`
 //   feature is declared here (the core derives it), ids computed (UUID v5)
@@ -149,18 +149,11 @@ export function buildPlant(gladys, plant, caps) {
   }
   if (caps.grid) {
     features.push(
-      feature(
-        external,
-        FEATURE.GRID_POWER,
-        'Grid power (import > 0, as the cloud gives it)',
-        C.GRID_SENSOR,
-        T.GRID_SENSOR.POWER,
-        {
-          unit: U.WATT,
-          min: -POWER_MAX,
-          max: POWER_MAX,
-        },
-      ),
+      feature(external, FEATURE.GRID_POWER, 'Grid power', C.GRID_SENSOR, T.GRID_SENSOR.POWER, {
+        unit: U.WATT,
+        min: -POWER_MAX,
+        max: POWER_MAX,
+      }),
     );
   }
   if (caps.load) {
@@ -319,12 +312,16 @@ const indexState = (external, index) =>
 /**
  * The states of a plant. `index`: the value the guard let through
  * (undefined: not sent). `stale`: the cloud has not updated the plant for a
- * while: its power is not sent (never an old value as a new one).
+ * while: none of its live values is sent, nor its energy of the day (never
+ * an old value as a new one, review 1 m3); the index (a total) still is.
  */
 export function plantStates(external, plant, monitor, index, { stale = false } = {}) {
+  if (stale) {
+    return indexState(external, index);
+  }
   return [
     ...indexState(external, index),
-    ...(stale ? [] : state(external, FEATURE.POWER, within(plant.power, POWER_MAX), 0)),
+    ...state(external, FEATURE.POWER, within(plant.power, POWER_MAX), 0),
     ...state(external, FEATURE.ENERGY_TODAY, within(plant.energyToday, DAY_ENERGY_MAX), 2),
     ...(monitor
       ? [

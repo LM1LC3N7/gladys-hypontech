@@ -60,11 +60,17 @@ src/constants.js        keys and limits (keys are forever)
   `battery:<sn>`; feature keys in `src/devices.js`. An item without a usable
   id gets no device (counted in the status), never a guessed id.
 - The production index is the cloud's lifetime total (`e_total`), through
-  `IndexGuard` (never 0, jumps and drops held, never confirmed by time,
-  accepted only by two clicks, bounded to the values listed). One level only
-  (`index_source`): plants, inverters or none, never two. Never a counter of
-  the day as an index, never `publishEnergyConsumption`, never a fallback to
-  another source after a value.
+  `IndexGuard` (never 0, jumps and drops held, never confirmed by time, a
+  jump accepted only by two clicks bounded to the values listed, a drop
+  NEVER accepted). One margin per index, learned from the power of its source
+  (or the typed peak for a plant). A reading equal to the reference while the
+  source produces nothing re-dates the reference (the night). A plant total
+  reaches its guard only when it is at least the sum of the highest totals
+  seen per inverter. One level only (`index_source`): inverters (default),
+  plants or none, never two; an index of a level left is retired for good in
+  /data (never fed again; deleting and creating the device starts afresh).
+  Never a counter of the day as an index, never `publishEnergyConsumption`,
+  never a fallback to another source after a value. Residual risks: TODO.md.
 - Never two reads less than an interval apart (the attempt is written in
   /data BEFORE the read); a 429/5xx pauses (1 min to 6 h, in /data); refused
   credentials are final (salted fingerprint in /data, erased at the first

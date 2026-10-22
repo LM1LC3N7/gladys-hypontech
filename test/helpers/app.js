@@ -16,7 +16,9 @@ export const SELECTOR = 'hypontech';
 export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 export const NOW = Date.parse('2026-10-22T10:05:00Z');
-export const CONFIG = { username: USERNAME, password: PASSWORD };
+/** The account, the index on the plants (most scenarios); the default is each inverter. */
+export const CONFIG = { username: USERNAME, password: PASSWORD, index_source: 'plant' };
+export const INVERTERS = { ...CONFIG, index_source: 'inverters' };
 export const F = (type, id, key) => `ext:${SELECTOR}:${type}:${id}:${key}`;
 export const D = (type, id) => `ext:${SELECTOR}:${type}:${id}`;
 
@@ -69,6 +71,7 @@ export async function setup({
   const gladys = createFakeGladys({ selector: SELECTOR, config, devices });
   await gladys.connect();
   const { clock, timers, advance } = createFakeClock(now);
+  cloud.now = () => clock.now;
   const lines = [];
   const log = (...args) => lines.push(args.map(String).join(' '));
   const app = new HyponApp({

@@ -34,13 +34,16 @@ For each **battery**: charge (%) and number of cycles.
    is never logged, nor the username, nor the session token.
 3. **Portal**: Hypontech for almost everyone; EAS Solar or Nexen if your
    installer gave you their portal.
-4. **Production index**: on the plants (default), on each inverter, or none.
-   Never both: the production would be counted twice. Choose "None" if another
-   meter (a production meter, a smart plug, another integration) already
-   counts this production in Gladys.
+4. **Production index**: on each inverter (default, the safest), on the
+   plants, or none. Never both: the production would be counted twice. Choose
+   "None" if another meter (a production meter, a smart plug, another
+   integration) already counts this production in Gladys. **Choose it before
+   creating the devices** (see below).
 5. **Peak power** (optional): the one of your largest plant, on the installer's
-   invoice. It bounds what the index may take between two reads. Empty: 60 kW.
-   Never enter less than the real value.
+   invoice. It bounds what the index of a plant may take between two reads.
+   Empty: learned from the power the cloud gives over a week (60 kW for a plant
+   and 15 kW for an inverter until then); an inverter uses its own learned
+   power as soon as it is known. Never enter less than the real value.
 6. **Read every**: 5 minutes by default (2 to 60). Each read makes about four
    requests per plant; the cloud itself is only updated every few minutes.
 7. Open the **Discover** tab and create the devices you want. Their values come
@@ -53,18 +56,38 @@ it was put into service. Gladys counts every rise of this index as production.
 So that an odd value is never counted:
 
 - an index of 0 is never sent;
-- a plausible rise (no more than the peak power × the time elapsed) goes through;
+- a plausible rise (no more than the power of the source × the time elapsed,
+  plus a small margin) goes through. This power is each index's own: learned
+  from the power the cloud gives (or the peak power typed, for a plant);
+- at night (nothing produced, the total unchanged) the reference is dated
+  again at each read: hours of night never widen the margin of the morning;
+- the total of a **plant** is used only when its inverters were read and it
+  reaches the sum of the highest totals seen for them: a partial total (an
+  inverter offline) is never counted, the index waits for the whole total;
 - a **jump** or a **drop** is **held back**: the last accepted value is sent
   again, the status of the integration shows it, and it stays held across a
   restart. Neither time nor repetition confirms it;
-- to take it, click **"Accept the held index"**: the first click lists the
-  values held and accepts nothing; a second click within 5 minutes accepts
-  exactly these values, counted at once at the next read. A value that changed
-  meanwhile stays held. Saving the configuration never accepts anything.
+- a **drop is never accepted**: it comes from an inverter offline, a partial
+  total or an odd value back to normal; the index goes on by itself when the
+  total comes back. An inverter removed or replaced: choose "Each inverter"
+  (it becomes a new device, without a jump);
+- to take a **jump**, click **"Accept the held index"**: the first click lists
+  the jumps held and accepts nothing; a second click within 5 minutes accepts
+  exactly these values, counted at once at the next read. By day a held value
+  may change at each read: click twice between two reads (a value that changed
+  stays held). Saving the configuration never accepts anything.
 
-To change the level of the index later: save the configuration, then "Update"
-the devices in the Discover tab. A device keeps the index it had (its history
-is never deleted), without new values.
+**Changing the level of the index later stops the index of the former level
+for good**: its devices keep it (their history is never deleted) but never
+receive a value again, even if you come back to that level, so that the
+production in between is never counted twice. The status of the integration
+says so. To resume the index of a device, delete it and create it again from
+the Discover tab. For the new level, "Update" its devices in the Discover tab.
+
+Remaining risk: if `/data` is lost and the container stopped for days, the
+reference taken back from Gladys is old and its margin covers the stop: an
+odd value read when it starts again could go through (bounded by the power of
+the source).
 
 ## Pace, pauses and refusals
 
@@ -85,9 +108,14 @@ is never deleted), without new values.
 ## Known limits
 
 - The cloud API is not documented: it may change without notice.
-- The sign of the grid power and of the battery power is the one the cloud
-  gives; it could not be checked.
+- The sign of the grid power (import > 0 expected, as Gladys wants it) and the
+  one of the battery power are the ones the cloud gives; still to confirm.
+- The grid power and the home consumption appear only after a first value
+  other than 0 (a plant without meter gives 0).
 - A plant the cloud has not updated for more than 2 hours (gateway offline) no
-  longer sends its power.
+  longer sends its live values, nor those of its inverters and batteries.
+- A gateway down by day that the cloud would show at 0 W: the catch-up of
+  production when it comes back may be held (counted less, never more, until
+  the click).
 - At most 10 plants and 100 inverters or batteries per plant are read.
 - No Bluetooth, no local access to the gateway.

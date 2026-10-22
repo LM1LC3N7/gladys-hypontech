@@ -20,9 +20,14 @@ the notes of the version's GitHub Release.
   own device.
 - A solar production index for the Gladys energy monitoring: the lifetime
   total of the cloud, checked by the index guard of gladys-p1-monitor (never
-  0, a jump or a drop held back, never confirmed by time, taken in two clicks
-  of "Accept the held index", bounded to the values listed). It is carried by
-  the plants (default), by each inverter, or by none: never by both levels.
+  0, a jump or a drop held back, never confirmed by time; a jump taken in two
+  clicks of "Accept the held index", bounded to the values listed; a drop
+  never accepted, it corrects itself). One margin per index, learned from the
+  power the cloud gives; the night never widens the margin of the morning; a
+  plant total is counted only when it reaches the sum of its inverters. It is
+  carried by each inverter (default), by the plants, or by none: never by
+  both levels, and the index of a level left stops for good (never counted
+  twice).
 - The login refused by the cloud stops everything until other credentials
   are saved or the test button logs in; 429 and 5xx pause the reads (1 min
   to 6 h, kept in /data); never two reads less than an interval apart, even

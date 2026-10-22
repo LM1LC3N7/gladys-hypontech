@@ -17,8 +17,8 @@ export const ACTIONS = { TEST: 'test_connection', ACCEPT_HELD: 'accept_held_inde
 export const TYPES = { PLANT: 'plant', INVERTER: 'inverter', BATTERY: 'battery' };
 export const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
-/** Which devices carry the production index (manifest `index_source`). */
-export const INDEX_SOURCES = ['plant', 'inverters', 'none'];
+/** Which devices carry the production index (manifest `index_source`); the first is the default. */
+export const INDEX_SOURCES = ['inverters', 'plant', 'none'];
 
 /** The OEM portals the library knows (its oems.csv): the `oem` sent at login. */
 export const OEMS = [0, 3, 4];
@@ -69,17 +69,42 @@ export const STATES_PER_MINUTE = 280;
 
 // --- Energy index (the lifetime total of the cloud, src/guard.js) --------------------
 /**
- * The margin of the guard (kW): 1.25 x the peak power typed in the
- * configuration (bounded to MAX_KW_MIN..MAX_KW_MAX), else INDEX_MAX_KW (a
- * large home installation of Hypontech inverters).
+ * The margin of the guard (kW), one per index (review 1, I2, as
+ * gladys-zeversolar 0.1.4):
+ * - a plant: 1.25 x the peak power typed, else 1.5 x the highest plausible
+ *   power the cloud gave for it over 30 days (once 7 days are known), else
+ *   INDEX_MAX_KW;
+ * - an inverter: 1.5 x its own highest power over 30 days (7 days known),
+ *   else 1.25 x the peak power typed, else INVERTER_MAX_KW (the largest
+ *   Hypontech hybrid inverters are 12 kW);
+ * - widened for one read to 1.5 x the plausible power of that read (n1);
+ * bounded to MAX_KW_MIN..MAX_KW_MAX.
  */
 export const INDEX_MAX_KW = 60;
-export const MAX_KW_MIN = 2;
+export const INVERTER_MAX_KW = 15;
+export const MAX_KW_MIN = 0.5;
 export const MAX_KW_MAX = 1250;
+/** Days of power peaks needed before the learned margin is used, and kept. */
+export const PEAK_DAYS_MIN = 7;
+export const PEAK_DAYS_KEPT = 30;
+/** A power above this many times the peak (typed or learned) is a glitch unless seen twice in a row. */
+export const PEAK_OUTLIER = 1.5;
+/** A power above this (W) is aberrant: never a peak, never in a margin. */
+export const PLAUSIBLE_INVERTER_W = 30_000;
+export const PLAUSIBLE_PLANT_W = MAX_KW_MAX * 1000;
 /** kWh always accepted on top of maxKw x hours (rounding, a late upload). */
 export const INDEX_SLACK_KWH = 0.5;
-/** At most this many index states kept in /data. */
-export const MAX_KEPT_INDEXES = 64;
+/**
+ * The plant total is used only when it reaches the sum of the highest totals
+ * seen for its inverters, within this per inverter (the plant total is
+ * rounded to 0.1 kWh, the inverters' to 0.01) plus INDEX_SUM_SLACK (B1 c).
+ */
+export const INDEX_SUM_PER_INVERTER = 0.1;
+export const INDEX_SUM_SLACK = 0.05;
+/** Index states, retired indexes and inverter totals kept in /data at most (I5). */
+export const MAX_KEPT_INDEXES = 4096;
+/** The local day of the power peaks: the TZ of the container, else Central European time. */
+export const TIME_ZONE = process.env.TZ || 'Europe/Paris';
 
 /** A power above this (W) is a glitch: not published. */
 export const POWER_MAX = 2_000_000;

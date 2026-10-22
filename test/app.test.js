@@ -302,16 +302,26 @@ test('one login per hour of reads; a token ended early, one login', async () => 
   assert.equal(statusOf(s).connected, true);
 });
 
-test('an offline inverter: power 0, its counters not sent; a stale plant: no power', async () => {
+test('an offline inverter: power 0, its counters not sent', async () => {
   const cloud = createCloud();
   cloud.data.inverters['1001'][0].status = 'offline';
-  cloud.data.plants[0].time = '2026-10-22T08:00:00+02:00';
   const s = await setup({ devices: created(), cloud });
   await s.start();
   assert.deepEqual(s.statesOf(F('inverter', 'HMS0001', 'power')), [0]);
   assert.deepEqual(s.statesOf(F('inverter', 'HMS0001', 'online')), [0]);
   assert.deepEqual(s.statesOf(F('inverter', 'HMS0001', 'energy_today')), []);
+});
+
+test('a stale plant: no live value, no energy of the day, nothing of its inverters (m3)', async () => {
+  const cloud = createCloud();
+  cloud.data.frozenTime = true;
+  cloud.data.plants[0].time = '2026-10-22T08:00:00+02:00';
+  const s = await setup({ devices: created(), cloud });
+  await s.start();
   assert.deepEqual(s.statesOf(F('plant', '1001', 'power')), []);
+  assert.deepEqual(s.statesOf(F('plant', '1001', 'energy_today')), []);
+  assert.deepEqual(s.statesOf(F('inverter', 'HMS0001', 'power')), []);
+  assert.deepEqual(s.statesOf(F('battery', 'BAT01', 'battery_level')), []);
   assert.deepEqual(s.statesOf(INDEX), [1234.5]);
   assert.match(statusOf(s).message.en, /not updated by the cloud for more than 2 h/);
 });
@@ -362,11 +372,18 @@ test('a new device starts its index afresh; items without an id are counted, not
   assert.deepEqual(s.statesOf(INDEX), [1234.5]);
 });
 
-test('the margin of the guard: the peak power typed, bounded, else 60 kW', () => {
-  assert.equal(maxKwOf(undefined), 60);
-  assert.equal(maxKwOf(3), 4);
-  assert.equal(maxKwOf(0.1), 2);
-  assert.equal(maxKwOf(1000), 1250);
+test('the margin of the guard: one per index, typed, learned, bounded (I2)', () => {
+  const week = (w) => Array.from({ length: 7 }, (_, i) => ({ day: `2026-10-0${i + 1}`, w }));
+  assert.equal(maxKwOf('plant', undefined), 60);
+  assert.equal(maxKwOf('plant', 3), 4);
+  assert.equal(maxKwOf('plant', 3, week(800)), 4, 'typed wins for a plant');
+  assert.equal(maxKwOf('plant', undefined, week(2400)), 4);
+  assert.equal(maxKwOf('plant', undefined, week(2400).slice(1)), 60, 'not 7 days yet');
+  assert.equal(maxKwOf('plant', 1000), 1250);
+  assert.equal(maxKwOf('inverter', undefined), 15);
+  assert.equal(maxKwOf('inverter', 3), 4);
+  assert.equal(maxKwOf('inverter', 3, week(800)), 1.5, 'its own power wins');
+  assert.equal(maxKwOf('inverter', undefined, week(100)), 0.5);
 });
 
 test('an incomplete form: no request, the status says what to enter', async () => {

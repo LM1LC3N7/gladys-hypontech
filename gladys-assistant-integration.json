@@ -76,15 +76,15 @@
       "key": "index_source",
       "type": "select",
       "required": false,
-      "default": "plant",
+      "default": "inverters",
       "label": { "en": "Production index", "fr": "Index de production" },
       "description": {
-        "en": "Which devices carry the solar production index the Gladys energy monitoring counts: the plants (default), or each inverter, never both (the production would be counted twice). Choose \"None\" if another meter (a production meter, a smart plug) already counts this production in Gladys. Changing it later: use \"Update\" in the Discover tab; a device keeps the index it had, without new values.",
-        "fr": "Quels appareils portent l'index de production solaire que compte le suivi énergétique de Gladys : les centrales (par défaut), ou chaque onduleur, jamais les deux (la production serait comptée deux fois). Choisissez « Aucun » si un autre compteur (compteur de production, prise connectée) compte déjà cette production dans Gladys. Pour changer plus tard : « Mettre à jour » dans l'onglet Découverte ; un appareil garde l'index qu'il avait, sans nouvelles valeurs."
+        "en": "Which devices carry the solar production index the Gladys energy monitoring counts: each inverter (default, the safest: its own total), or the plants, never both (the production would be counted twice). A plant total is counted only when it reaches the sum of its inverters. Choose \"None\" if another meter (a production meter, a smart plug) already counts this production in Gladys. Choose it before creating the devices: when it changes, the index of the former level stops for good (never counted twice); to resume it, delete the device and create it again.",
+        "fr": "Quels appareils portent l'index de production solaire que compte le suivi énergétique de Gladys : chaque onduleur (par défaut, le plus sûr : son propre total), ou les centrales, jamais les deux (la production serait comptée deux fois). Le total d'une centrale n'est compté que s'il atteint la somme de ses onduleurs. Choisissez « Aucun » si un autre compteur (compteur de production, prise connectée) compte déjà cette production dans Gladys. Choisissez-le avant de créer les appareils : s'il change, l'index de l'ancien niveau s'arrête pour de bon (jamais compté deux fois) ; pour le reprendre, supprimez l'appareil et recréez-le."
       },
       "options": [
-        { "value": "plant", "label": { "en": "Plants", "fr": "Centrales" } },
         { "value": "inverters", "label": { "en": "Each inverter", "fr": "Chaque onduleur" } },
+        { "value": "plant", "label": { "en": "Plants", "fr": "Centrales" } },
         { "value": "none", "label": { "en": "None", "fr": "Aucun" } }
       ]
     },
@@ -99,8 +99,8 @@
         "fr": "Puissance crête de la plus grande centrale (kWc, facultatif)"
       },
       "description": {
-        "en": "The peak power of your panels (on the installer's invoice). It bounds what the production index may take between two reads (an odd total is held back instead). Empty: 60 kW. Never enter less than the real peak power: in doubt, leave it empty.",
-        "fr": "La puissance crête de vos panneaux (sur la facture de l'installateur). Elle borne ce que l'index de production peut prendre entre deux lectures (un total aberrant est retenu). Vide : 60 kW. Ne saisissez jamais moins que la vraie puissance crête : dans le doute, laissez vide."
+        "en": "The peak power of your panels (on the installer's invoice). It bounds what the production index of a plant may take between two reads (an odd total is held back instead). Empty: learned from the power the cloud gives over a week (60 kW for a plant, 15 kW for an inverter until then); an inverter always uses its own learned power once known. Never enter less than the real peak power: in doubt, leave it empty.",
+        "fr": "La puissance crête de vos panneaux (sur la facture de l'installateur). Elle borne ce que l'index de production d'une centrale peut prendre entre deux lectures (un total aberrant est retenu). Vide : apprise depuis la puissance donnée par le cloud sur une semaine (60 kW pour une centrale, 15 kW pour un onduleur d'ici là) ; un onduleur utilise toujours sa propre puissance apprise une fois connue. Ne saisissez jamais moins que la vraie puissance crête : dans le doute, laissez vide."
       },
       "placeholder": { "en": "e.g. 3", "fr": "ex. 3" }
     },
@@ -133,8 +133,8 @@
       "timeout_seconds": 30,
       "label": { "en": "Accept the held index", "fr": "Accepter l'index retenu" },
       "description": {
-        "en": "Only when the status shows a production index held back and this energy was real. First click: lists the values held, accepts nothing. Second click within 5 minutes: accepts exactly the values listed, counted at once at the next read. Saving the configuration never accepts anything.",
-        "fr": "Seulement quand l'état affiche un index de production retenu et que cette énergie est réelle. Premier clic : liste les valeurs retenues, n'accepte rien. Second clic dans les 5 minutes : accepte exactement les valeurs listées, comptées d'un coup à la prochaine lecture. Enregistrer la configuration n'accepte jamais rien."
+        "en": "Only when the status shows a jump of the production index held back and this energy was real. First click: lists the jumps held, accepts nothing. Second click within 5 minutes (and before the next read): accepts exactly the values listed, counted at once at the next read. A drop is never accepted: it corrects itself. Saving the configuration never accepts anything.",
+        "fr": "Seulement quand l'état affiche un saut de l'index de production retenu et que cette énergie est réelle. Premier clic : liste les sauts retenus, n'accepte rien. Second clic dans les 5 minutes (et avant la lecture suivante) : accepte exactement les valeurs listées, comptées d'un coup à la prochaine lecture. Une baisse n'est jamais acceptée : elle se corrige seule. Enregistrer la configuration n'accepte jamais rien."
       }
     }
   ]

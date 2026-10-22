@@ -119,7 +119,11 @@ export function createCloud(data = account()) {
           totalPage: Math.max(1, Math.ceil(items.length / size)),
         });
       if (parsed.pathname === '/v2/plant/list2') {
-        return paged(d.plants);
+        // The plant is updated now (the clock of the test), unless its `time` is frozen.
+        const plants = d.plants.map((p) =>
+          cloud.now && !d.frozenTime ? { ...p, time: new Date(cloud.now()).toISOString() } : p,
+        );
+        return paged(plants);
       }
       const m = /^\/v2\/plant\/([^/]+)\/(inverter|battery|monitor)$/.exec(parsed.pathname);
       if (m) {

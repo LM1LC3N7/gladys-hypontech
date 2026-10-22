@@ -23,7 +23,8 @@ RUN npm ci --omit=dev || npm install --omit=dev
 COPY index.js ./
 COPY src ./src
 COPY gladys-assistant-integration.json ./
-# The licenses ship with the code they cover (Apache-2.0 notice of the ported logic).
+# The licenses ship with the code they cover: Apache-2.0 for this integration,
+# and the MIT notice of the ported logic (hyponcloud) in THIRD_PARTY_NOTICES.md.
 COPY LICENSE THIRD_PARTY_NOTICES.md ./
 
 # The only writable location allowed at runtime. Docker creates a new volume

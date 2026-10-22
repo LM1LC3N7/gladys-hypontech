@@ -113,7 +113,8 @@ test('the configuration matches the code', () => {
     fields.index_source.options.map((o) => o.value),
     INDEX_SOURCES,
   );
-  assert.equal(normalizeConfig({ index_source: fields.index_source.default }).indexSource, 'plant');
+  assert.equal(fields.index_source.default, 'inverters');
+  assert.equal(normalizeConfig({}).indexSource, fields.index_source.default);
   assert.equal(normalizeConfig({ peak_power_kw: fields.peak_power_kw.max }).peakKw, 1000);
   assert.equal(normalizeConfig({ peak_power_kw: fields.peak_power_kw.min }).peakKw, 0.1);
   assert.equal(normalizeConfig({ poll_minutes: fields.poll_minutes.min }).pollMinutes, 2);
