@@ -875,12 +875,18 @@ export class HyponApp {
     if (!type) {
       return false;
     }
-    const level = created.filter((d) => d.external_id.split(':')[2] === type);
+    // A device whose index is retired is told by its own note (delete and
+    // create it again): "Update" would not resume it (approval 1, r3).
+    const level = created.filter(
+      (d) =>
+        d.external_id.split(':')[2] === type &&
+        !this.retired.has(`${d.external_id}:${FEATURE.PRODUCTION_INDEX}`),
+    );
     return (
       level.length > 0 &&
       !level.some((d) => {
         const id = `${d.external_id}:${FEATURE.PRODUCTION_INDEX}`;
-        return !this.retired.has(id) && (d.features ?? []).some((f) => f.external_id === id);
+        return (d.features ?? []).some((f) => f.external_id === id);
       })
     );
   }
@@ -1144,10 +1150,16 @@ export class HyponApp {
     const guard = this.guardOf(created, id, kw);
     this.labels.set(id, label);
     const value = usable ? totalOf(total) : undefined;
+    const now = this.now();
     if (value === undefined) {
+      if (usable && idle && !guard.held && guard.last) {
+        // At rest without a total (an offline inverter shown with 0, approval
+        // 1, R1): the reference is dated now too. Never for a source stale or
+        // not read (`usable` false).
+        guard.last = { value: guard.last.value, at: now };
+      }
       return guard.held ? guard.last?.value : undefined;
     }
-    const now = this.now();
     if (idle && !guard.held && guard.last && value === guard.last.value) {
       // Nothing produced and nothing moved (the night): the reference is
       // dated now, the hours at rest never widen the margin of the next rise.
@@ -1166,8 +1178,9 @@ export class HyponApp {
   /**
    * Whether the total of a plant may reach its guard (B1 c): its inverters
    * were read this time, and it reaches the sum of the highest totals seen
-   * for them (rounding apart). A plant listing no inverter keeps the plain
-   * rule.
+   * for them (rounding apart). Not while a listed inverter has no known
+   * total yet (approval 1, R2: never a first reference from a partial sum).
+   * A plant listing no inverter keeps the plain rule.
    */
   plantTotalUsable(entry) {
     if (!entry.invertersRead) {
@@ -1177,7 +1190,10 @@ export class HyponApp {
     if (inverters.length === 0) {
       return true;
     }
-    const sum = inverters.reduce((n, i) => n + (this.inverterTotals.get(i.sn) ?? 0), 0);
+    if (inverters.some((i) => !this.inverterTotals.has(i.sn))) {
+      return false;
+    }
+    const sum = inverters.reduce((n, i) => n + this.inverterTotals.get(i.sn), 0);
     const total = totalOf(entry.plant.energyTotal);
     return (
       total !== undefined &&

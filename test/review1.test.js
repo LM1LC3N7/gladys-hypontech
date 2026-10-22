@@ -182,6 +182,8 @@ test('B2 (Z4): an index of a level left never receives values again, even when i
     'never fed again',
   );
   assert.match(statusOf(s), /production index of 1 device\(s\) was stopped/);
+  // Only "delete and create it again", never "Update" too (approval 1, r3).
+  assert.doesNotMatch(statusOf(s), /click "Update"/);
   assert.ok(INDEX in store.data.retired);
   // A restart keeps it retired; via "none" too.
   await s.app.stop();
@@ -317,4 +319,49 @@ test('m6 and the default: the index on each inverter; a created inverter without
   const t = await setup({ devices: created(account(), { source: 'plant' }), config: INVERTERS });
   await t.start(INVERTERS);
   assert.match(statusOf(t), /None of the created inverters carries the production index/);
+});
+
+test('approval 1, R1 (Z1i): an offline inverter shown with a total of 0 at night: the morning margin stays short', async () => {
+  const cloud = createCloud();
+  const s = await setup({ devices: withIndex('inverters'), cloud, config: INVERTERS });
+  await s.start();
+  // Thirteen hours of night, the cloud showing 0 for the offline inverters.
+  night(cloud.data);
+  for (const inv of cloud.data.inverters['1001']) inv.e_total = 0;
+  for (let i = 0; i < 156; i += 1) await s.wait(5 * MINUTE);
+  // 06:05: one odd read, +40 kWh on HMS0001.
+  Object.assign(cloud.data.inverters['1001'][0], { status: 'online', power: 50, e_total: 640.25 });
+  await s.wait(5 * MINUTE);
+  assert.ok(
+    s.statesOf(INV1).every((v) => v === 600.25),
+    String(s.statesOf(INV1)),
+  );
+  assert.match(statusOf(s), /held back.*HMS0001: 600\.25 -> 640\.25/);
+  // Back to its real total: it goes on, nothing counted twice.
+  cloud.data.inverters['1001'][0].e_total = 600.27;
+  await s.wait(5 * MINUTE);
+  assert.ok(counted(s.statesOf(INV1), 600.25) <= 0.021);
+});
+
+test('approval 1, R2 (Z2z): a plant total is not used while an inverter has no known total', async () => {
+  const cloud = createCloud();
+  night(cloud.data);
+  for (const inv of cloud.data.inverters['1001']) inv.e_total = 0;
+  cloud.data.plants[0].e_total = 0;
+  const s = await setup({ devices: created(), cloud });
+  await s.start();
+  for (let i = 0; i < 12; i += 1) await s.wait(5 * MINUTE);
+  // Dawn: one inverter online, the other still offline at 0, the plant = the online one.
+  Object.assign(cloud.data.inverters['1001'][0], { status: 'online', power: 50, e_total: 600.3 });
+  cloud.data.plants[0].e_total = 600.3;
+  cloud.data.plants[0].power = 50;
+  for (let i = 0; i < 6; i += 1) await s.wait(5 * MINUTE);
+  assert.deepEqual(s.statesOf(INDEX), [], 'never a first reference from a partial sum');
+  assert.match(statusOf(s), /below the sum of their inverters/);
+  // The second one comes online: the whole total, the first reference.
+  Object.assign(cloud.data.inverters['1001'][1], { status: 'online', power: 50, e_total: 634.3 });
+  cloud.data.plants[0].e_total = 1234.6;
+  await s.wait(5 * MINUTE);
+  assert.deepEqual(s.statesOf(INDEX), [1234.6]);
+  assert.doesNotMatch(statusOf(s), /held back/);
 });

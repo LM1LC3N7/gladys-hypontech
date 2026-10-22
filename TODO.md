@@ -38,7 +38,12 @@
 - [ ] A plant total is checked against the highest total seen per inverter:
       an inverter total that glitches up once raises that sum for good; the
       plant index then stalls (counted less, never more) with the note
-      "below the sum of their inverters". "Each inverter" avoids it.
+      "below the sum of their inverters". "Each inverter" avoids it. Since
+      approval 1 (R2) a listed inverter that never gives a total above 0
+      also keeps the plant index waiting (less, never more).
+- [ ] Approval 1 (R1): an index at rest is re-dated even without a total (an
+      offline inverter shown with 0), never when its source is stale or not
+      read.
 - [ ] A gateway down by day shown at 0 W by the cloud: the night re-dating
       applies, the catch-up may be held (less, until the click).
 - [ ] m7: a 401 on every GET right after a successful login (an account
