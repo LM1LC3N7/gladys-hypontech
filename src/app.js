@@ -1135,9 +1135,11 @@ export class HyponApp {
    * the total when plausible, the last accepted one while a value is held,
    * else undefined. `source`: `{ kind: 'plant' | 'inverter', power, idle }`,
    * `usable`: false when this total must not reach the guard this time (a
-   * plant total below its inverters, B1 c).
+   * plant total below its inverters, B1 c); `fresh` (default `usable`): the
+   * source was read this time and is not stale, so at rest it re-dates its
+   * reference even without a usable total.
    */
-  indexFor(created, external, total, label, { kind, power, idle, usable = true }) {
+  indexFor(created, external, total, label, { kind, power, idle, usable = true, fresh = usable }) {
     const id = external.feature(FEATURE.PRODUCTION_INDEX);
     if (!(created.features ?? []).some((f) => f.external_id === id) || this.retired.has(id)) {
       return undefined;
@@ -1152,10 +1154,11 @@ export class HyponApp {
     const value = usable ? totalOf(total) : undefined;
     const now = this.now();
     if (value === undefined) {
-      if (usable && idle && !guard.held && guard.last) {
+      if (fresh && idle && !guard.held && guard.last) {
         // At rest without a total (an offline inverter shown with 0, approval
-        // 1, R1): the reference is dated now too. Never for a source stale or
-        // not read (`usable` false).
+        // 1, R1; a plant whose cloud sums the inverters online only, approval
+        // 2, n1): the reference is dated now too. Never for a source stale or
+        // not read (`fresh` false).
         guard.last = { value: guard.last.value, at: now };
       }
       return guard.held ? guard.last?.value : undefined;
@@ -1220,6 +1223,9 @@ export class HyponApp {
             power: plant.power,
             idle: !(plant.power > 0),
             usable,
+            // The plant list was just read: a plant at 0 W not stale is at
+            // rest even when its total is not usable (approval 2, n1).
+            fresh: !stale,
           });
         }
         states.push(

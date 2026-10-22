@@ -365,3 +365,30 @@ test('approval 1, R2 (Z2z): a plant total is not used while an inverter has no k
   assert.deepEqual(s.statesOf(INDEX), [1234.6]);
   assert.doesNotMatch(statusOf(s), /held back/);
 });
+
+for (const odd of [40, 300]) {
+  test(`approval 2, n1 (Z11): plant level, the cloud summing the inverters online only: +${odd} kWh at 06:20 held`, async () => {
+    const cloud = createCloud();
+    const s = await setup({ devices: withIndex(), cloud });
+    await s.start();
+    // Thirteen hours of night: nothing online, the plant total at 0 (not usable).
+    night(cloud.data);
+    cloud.data.plants[0].e_total = 0;
+    for (let i = 0; i < 156; i += 1) await s.wait(5 * MINUTE);
+    // 06:20: one inverter online, one odd plant total on this read only.
+    Object.assign(cloud.data.inverters['1001'][0], { status: 'online', power: 50, e_total: 600.3 });
+    cloud.data.plants[0].power = 50;
+    cloud.data.plants[0].e_total = round(1234.55 + odd);
+    await s.wait(5 * MINUTE);
+    assert.ok(
+      s.statesOf(INDEX).every((v) => v === 1234.5),
+      String(s.statesOf(INDEX)),
+    );
+    assert.match(statusOf(s), /held back/);
+    // Then the morning as it is: nothing counted twice.
+    Object.assign(cloud.data.inverters['1001'][1], { status: 'online', power: 50, e_total: 634.3 });
+    cloud.data.plants[0].e_total = 1234.6;
+    await s.wait(5 * MINUTE);
+    assert.ok(counted(s.statesOf(INDEX), 1234.5) <= 0.101);
+  });
+}

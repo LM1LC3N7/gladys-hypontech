@@ -59,9 +59,11 @@ So that an odd value is never counted:
 - a plausible rise (no more than the power of the source × the time elapsed,
   plus a small margin) goes through. This power is each index's own: learned
   from the power the cloud gives (or the peak power typed, for a plant);
-- at night (nothing produced, the total unchanged, or absent for an offline
-  inverter the cloud shows at 0) the reference is dated again at each read:
-  hours of night never widen the margin of the morning;
+- at night (nothing produced, whether the total is unchanged, absent, at 0 or
+  partial: an offline inverter the cloud shows at 0, a plant whose cloud sums
+  the inverters online only) the reference is dated again at each read of a
+  source read and up to date: hours of night never widen the margin of the
+  morning;
 - the total of a **plant** is used only when its inverters were read, each of
   them has already given a total, and it reaches the sum of the highest totals
   seen for them: a partial total (an inverter offline) is never counted, the

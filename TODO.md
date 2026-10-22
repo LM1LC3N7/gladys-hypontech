@@ -43,7 +43,9 @@
       also keeps the plant index waiting (less, never more).
 - [ ] Approval 1 (R1): an index at rest is re-dated even without a total (an
       offline inverter shown with 0), never when its source is stale or not
-      read.
+      read. Approval 2 (n1): a plant at 0 W, its list read and not stale,
+      re-dates its reference even when its total is not usable (a cloud that
+      sums the inverters online only: 0 or a partial sum at night).
 - [ ] A gateway down by day shown at 0 W by the cloud: the night re-dating
       applies, the catch-up may be held (less, until the click).
 - [ ] m7: a 401 on every GET right after a successful login (an account

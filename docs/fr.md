@@ -65,9 +65,11 @@ production. Pour ne jamais compter une valeur aberrante :
   écoulé, un peu de marge en plus) passe. Cette puissance est propre à chaque
   index : apprise de la puissance donnée par le cloud (ou la puissance crête
   saisie pour une centrale) ;
-- la nuit (rien produit, total inchangé, ou absent pour un onduleur hors
-  ligne que le cloud montre à 0), la référence est redatée à chaque lecture :
-  des heures de nuit n'élargissent jamais la marge du matin ;
+- la nuit (rien produit, que le total soit inchangé, absent, à 0 ou partiel :
+  un onduleur hors ligne que le cloud montre à 0, une centrale dont le cloud ne
+  somme que les onduleurs en ligne), la référence est redatée à chaque lecture
+  d'une source lue et à jour : des heures de nuit n'élargissent jamais la marge
+  du matin ;
 - le total d'une **centrale** n'est utilisé que si ses onduleurs ont été lus,
   que chacun a déjà donné un total, et qu'il atteint la somme des plus hauts
   totaux vus pour eux : un total partiel (un onduleur hors ligne) n'est jamais
