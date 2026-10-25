@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-25
+
 ### Fixed
 
 - Reads never started with a real clock on a fresh install
@@ -39,5 +41,6 @@ the notes of the version's GitHub Release.
   to 6 h, kept in /data); never two reads less than an interval apart, even
   after a restart.
 
-[Unreleased]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/LM1LC3N7/gladys-hypontech/releases/tag/v0.1.1
