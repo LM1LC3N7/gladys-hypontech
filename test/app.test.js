@@ -81,7 +81,9 @@ test('the index: never 0, a jump held until two clicks, then exactly that value'
   // First click: the list, nothing accepted.
   const first = await s.app.acceptHeldIndex();
   assert.match(first.en, /Nothing accepted yet/);
-  await s.wait(5 * MINUTE);
+  // The test clock drifts by microseconds per read of the monotonic clock:
+  // the second click comes well within the 5 min, never at their edge.
+  await s.wait(4 * MINUTE);
   assert.ok(s.statesOf(INDEX).every((v) => v === 1234.5));
   // Second click within 5 min: exactly the value listed.
   const second = await s.app.acceptHeldIndex();
@@ -97,9 +99,12 @@ test('a second click never takes a value that changed since the list', async () 
   });
   s.cloud.data.plants[0].e_total = 6234.5;
   await s.start();
+  // The first click a minute after the read: the next read (at 5 min) comes
+  // before the second click, well within the 5 min of the window.
+  await s.wait(MINUTE);
   await s.app.acceptHeldIndex();
   s.cloud.data.plants[0].e_total = 9234.5;
-  await s.wait(5 * MINUTE);
+  await s.wait(4 * MINUTE);
   const second = await s.app.acceptHeldIndex();
   assert.match(second.en, /Nothing accepted\. 1 value\(s\) changed/);
   await s.wait(5 * MINUTE);

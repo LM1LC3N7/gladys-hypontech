@@ -458,9 +458,8 @@ export class HyponApp {
     );
   }
 
-  /** The monotonic time from which the next read may start (pace, retries, pause). */
-  dueAt() {
-    const mono = this.monotonic();
+  /** The monotonic time from which the next read may start (pace, retries, pause), from the caller's instant `mono` (the clock is read once per decision). */
+  dueAt(mono) {
     let due = this.lastReadAt === undefined ? mono : this.lastReadAt + this.interval();
     if (this.nextTryAt !== undefined) {
       due = Math.max(due, this.nextTryAt);
@@ -481,7 +480,8 @@ export class HyponApp {
     if (!this.running || !this.session?.client || this.isRefused()) {
       return;
     }
-    const wait = Math.max(0, this.dueAt() - this.monotonic());
+    const mono = this.monotonic();
+    const wait = Math.max(0, this.dueAt(mono) - mono);
     this.timer = this.timers.setTimeout(() => {
       this.timer = undefined;
       this.loopRun = this.loop();
@@ -530,7 +530,7 @@ export class HyponApp {
       return;
     }
     const mono = this.monotonic();
-    if (mono < this.dueAt()) {
+    if (mono < this.dueAt(mono)) {
       return;
     }
     /** Another account (or a stop) during an await: this read gives up, silently. */
@@ -828,7 +828,8 @@ export class HyponApp {
       return [false, T.unreachable(this.lastError, wait, notes)];
     }
     if (!this.data) {
-      return [true, T.waiting(Math.max(0, this.dueAt() - this.monotonic()))];
+      const mono = this.monotonic();
+      return [true, T.waiting(Math.max(0, this.dueAt(mono) - mono))];
     }
     if (this.data.plants.length === 0) {
       return [true, T.noPlant];
@@ -1381,9 +1382,10 @@ export class HyponApp {
       return this.currentStatus()[1];
     }
     const refused = this.isRefused();
-    if (this.busy || this.dueAt() > this.monotonic()) {
+    const mono = this.monotonic();
+    if (this.busy || this.dueAt(mono) > mono) {
       return refused
-        ? T.test.refusedWait(Math.max(0, this.dueAt() - this.monotonic()))
+        ? T.test.refusedWait(Math.max(0, this.dueAt(mono) - mono))
         : this.describeOutcome();
     }
     const session = this.session;
@@ -1410,7 +1412,7 @@ export class HyponApp {
   /** The last read in words, and the time to the next one. */
   describeOutcome() {
     const mono = this.monotonic();
-    const next = Math.max(0, this.dueAt() - mono);
+    const next = Math.max(0, this.dueAt(mono) - mono);
     const outcome = this.outcome;
     if (!outcome) {
       return T.test.notYet(next);
