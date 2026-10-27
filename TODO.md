@@ -63,6 +63,10 @@
 
 ## Decisions
 
+- **SDK `^0.16.0`** (2026-10-27, migration wave 4): 0.16.0 is on npm since
+  2026-10-25 (a stale npm cache said otherwise); it adds the ai, tts and music
+  types; no effect here (`poll_frequency` unused). `keywords`, `countries`
+  and `gladys_version >= 5.3.0` wait until Gladys 5.3 is widespread.
 - Version 0.1.0 set by hand in package.json, package-lock.json, the manifest
   and the `docker_image` tag (the first release patch gives 0.1.1).
 - The cloud gives a cumulative lifetime total (`e_total`): the index is that

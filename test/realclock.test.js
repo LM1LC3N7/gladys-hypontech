@@ -3,7 +3,7 @@
 // real local HTTP server playing the cloud (the account of the fake cloud,
 // served over a real socket): the reads really start, at 0, the interval and
 // twice the interval, with a bounded number of timers. The time is sped up
-// 100 times (2 min of the interval are 1.2 s) but it is the real clock: it
+// 20 times (2 min of the interval are 6 s) but it is the real clock: it
 // moves between any two reads of it.
 // -----------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ import { HyponClient } from '../src/hypon/client.js';
 import { createMemoryStore } from '../src/store.js';
 import { PASSWORD, USERNAME, createCloud } from './helpers/fakeCloud.js';
 
-const SPEED = 100;
+const SPEED = 20;
 const POLL_INTERVAL = POLL_MIN_MIN * 60_000;
 
 test('real clock: reads at 0, the interval and twice the interval; timers bounded', async () => {
