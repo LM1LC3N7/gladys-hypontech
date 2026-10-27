@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-27
+
 ### Changed
 
 - Integration SDK 0.16 (no change for the devices).
@@ -45,6 +47,7 @@ the notes of the version's GitHub Release.
   to 6 h, kept in /data); never two reads less than an interval apart, even
   after a restart.
 
-[Unreleased]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/LM1LC3N7/gladys-hypontech/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/LM1LC3N7/gladys-hypontech/releases/tag/v0.1.1
