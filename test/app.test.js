@@ -93,6 +93,33 @@ test('the index: never 0, a jump held until two clicks, then exactly that value'
   assert.doesNotMatch(statusOf(s).message.en, /held back/);
 });
 
+test('a jump accepted, then the total back near the reference: held as a jump, two clicks take it', async () => {
+  const s = await setup({
+    devices: created(account(), { index: { [PLANT]: { value: 1234.5, at: NOW - MINUTE } } }),
+  });
+  s.cloud.data.plants[0].e_total = 6234.5;
+  await s.start();
+  await s.wait(MINUTE);
+  await s.app.acceptHeldIndex();
+  await s.wait(MINUTE);
+  const accepted = await s.app.acceptHeldIndex();
+  assert.match(accepted.en, /Accepted: Maison: 1234\.5 -> 6234\.5 kWh/);
+  // The cloud comes back before the next read: never a drop, never published.
+  s.cloud.data.plants[0].e_total = 1234.7;
+  await s.wait(5 * MINUTE);
+  assert.ok(s.statesOf(INDEX).every((v) => v === 1234.5));
+  assert.match(statusOf(s).message.en, /held back.*1234\.5 -> 1234\.7 kWh/);
+  assert.doesNotMatch(statusOf(s).message.en, /drop/);
+  const first = await s.app.acceptHeldIndex();
+  assert.match(first.en, /Nothing accepted yet/);
+  await s.wait(MINUTE);
+  const second = await s.app.acceptHeldIndex();
+  assert.match(second.en, /Accepted: Maison: 1234\.5 -> 1234\.7 kWh/);
+  await s.wait(5 * MINUTE);
+  assert.equal(s.statesOf(INDEX).at(-1), 1234.7);
+  assert.doesNotMatch(statusOf(s).message.en, /held back/);
+});
+
 test('a second click never takes a value that changed since the list', async () => {
   const s = await setup({
     devices: created(account(), { index: { [PLANT]: { value: 1234.5, at: NOW - MINUTE } } }),

@@ -29,7 +29,8 @@
 //   from there. A value outside the bounds is held again and the acceptance
 //   dropped;
 // - an accepted value is a floor both ways: a value under it is held (never
-//   counted), the acceptance kept and its margin counted from then;
+//   counted), the acceptance kept and its margin counted from then; held as a
+//   jump when it is above the reference (back under an accepted jump);
 // - while a jump is held, every value at or above it stays held: the margin
 //   growing while nothing is published must never cover it;
 // - a value back to the usual rule (the drop or the jump was a glitch) ends
@@ -149,8 +150,11 @@ export class IndexGuard {
       }
       if (value < this.accepted.to) {
         // Under the floor accepted (a glitch): held, shown, never counted; the
-        // acceptance stays for the value listed, which may come back.
-        this.held = { direction: 'down', from: this.last.value, to: value, threshold: value, at };
+        // acceptance stays for the value listed, which may come back. Its
+        // direction is the one from the reference: above it (back under an
+        // accepted jump), it is a jump of its own, shown and accepted as one.
+        const direction = value > this.last.value ? 'up' : 'down';
+        this.held = { direction, from: this.last.value, to: value, threshold: value, at };
         // Its margin counts from now: a long glitch never widens it.
         this.accepted = { ...this.accepted, at };
         return false;

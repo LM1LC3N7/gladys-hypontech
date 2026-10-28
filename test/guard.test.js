@@ -193,6 +193,7 @@ test('index guard: an accepted drop is the floor, a lower value later is held', 
   assert.ok(guard.acceptHeld());
   assert.equal(guard.accept(5, 2 * MINUTE), false, 'never 5 kWh without a click');
   assert.equal(guard.held.to, 5);
+  assert.equal(guard.held.from, 1000);
   assert.equal(guard.last.value, 1000);
   // The value accepted comes back: it follows, from the floor accepted.
   assert.equal(guard.accept(12.1, 3 * MINUTE), true);
@@ -210,4 +211,23 @@ test('index guard: readings under an accepted floor for hours never widen the ac
   // A value above the acceptance dropped it: 12.1 needs a new acceptance.
   assert.equal(guard.accept(12.1, t + MINUTE), false);
   assert.equal(guard.held.direction, 'down');
+});
+
+test('index guard: under an accepted jump, a value above the reference is held as a jump', () => {
+  const guard = guardOf({ value: 1000, at: 0 }, undefined, 0);
+  assert.equal(guard.accept(6000, MINUTE), false);
+  assert.ok(guard.acceptHeld());
+  assert.equal(guard.accept(1000.2, 2 * MINUTE), false, 'under the jump accepted: held');
+  assert.deepEqual(
+    { ...guard.held },
+    { direction: 'up', from: 1000, to: 1000.2, threshold: 1000.2, at: 2 * MINUTE },
+  );
+  assert.deepEqual(guard.acceptHeld(), { direction: 'up', from: 1000, to: 1000.2 });
+  assert.equal(guard.accept(1000.3, 3 * MINUTE), true);
+  // Under the reference, it is a drop.
+  const low = guardOf({ value: 1000, at: 0 }, undefined, 0);
+  assert.equal(low.accept(6000, MINUTE), false);
+  assert.ok(low.acceptHeld());
+  assert.equal(low.accept(900, 2 * MINUTE), false);
+  assert.equal(low.held.direction, 'down');
 });
