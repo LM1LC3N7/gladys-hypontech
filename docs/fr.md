@@ -79,7 +79,8 @@ production. Pour ne jamais compter une valeur aberrante :
   redémarrage. Ni le temps ni la répétition ne le confirment ;
 - une **baisse n'est jamais acceptée** : elle vient d'un onduleur hors ligne,
   d'un total partiel ou d'une valeur fausse revenue à la normale ; l'index
-  reprend seul quand le total revient. Un onduleur retiré ou remplacé :
+  reprend seul quand le total revient ; s'il revient au-dessus de la référence après un saut
+  accepté, il est retenu comme un saut (deux clics). Un onduleur retiré ou remplacé :
   choisissez « Chaque onduleur » (il devient un nouvel appareil, sans saut) ;
 - pour prendre un **saut**, cliquez sur **« Accepter l'index retenu »** : le
   premier clic liste les sauts retenus sans rien accepter ; un second clic dans

@@ -3,8 +3,10 @@
 //
 // Taken as it is from gladys-p1-monitor (src/guard.js, approved), with one
 // change only: `maxKw` and `slackKwh` are parameters of the guard (each index
-// passes its own), no longer constants of the module. Same file as
-// gladys-imeon's and gladys-zeversolar's (approved). Here it checks the
+// passes its own), no longer constants of the module. Differs
+// from gladys-imeon's and gladys-zeversolar's (approved) in one line: the
+// `direction` of a value held under an accepted floor, `up` when it is above
+// the reference (a jump of its own), not always `down`. Here it checks the
 // lifetime production total the Hypon cloud gives (a cumulative counter, as
 // the P1 meter's index): nothing is built from a counter of the day.
 //

@@ -60,8 +60,8 @@ const withNotes = (first, notes) => ({
 const heldLine = ({ label, direction, from, to }) =>
   direction === 'down'
     ? {
-        en: `${label}: ${kwh(from)} -> ${kwh(to)} kWh (a drop: never accepted, the index goes on by itself when the total comes back)`,
-        fr: `${label} : ${kwh(from)} -> ${kwh(to)} kWh (une baisse : jamais acceptée, l’index reprend seul quand le total revient)`,
+        en: `${label}: ${kwh(from)} -> ${kwh(to)} kWh (a drop: never accepted, the index goes on by itself when the total comes back; above the reference, after an accepted jump, it is held as a jump: two clicks)`,
+        fr: `${label} : ${kwh(from)} -> ${kwh(to)} kWh (une baisse : jamais acceptée, l’index reprend seul quand le total revient ; au-dessus de la référence, après un saut accepté, elle est retenue comme un saut : deux clics)`,
       }
     : {
         en: `${label}: ${kwh(from)} -> ${kwh(to)} kWh (+${kwh(to - from)} kWh counted at once)`,
@@ -174,8 +174,8 @@ export const T = {
     },
     /** A drop of a production total: never accepted (review 1, I1). */
     drop: {
-      en: 'The index held back is a drop: it is never accepted, the index goes on by itself when the total of the cloud comes back. An inverter removed or replaced: choose "Each inverter" for the production index. Nothing to accept.',
-      fr: 'L’index retenu est une baisse : elle n’est jamais acceptée, l’index reprend seul quand le total du cloud revient. Un onduleur retiré ou remplacé : choisissez « Chaque onduleur » pour l’index de production. Rien à accepter.',
+      en: 'The index held back is a drop: it is never accepted, the index goes on by itself when the total of the cloud comes back (if it comes back above the reference after an accepted jump, it is held as a jump, accepted in two clicks). An inverter removed or replaced: choose "Each inverter" for the production index. Nothing to accept.',
+      fr: 'L’index retenu est une baisse : elle n’est jamais acceptée, l’index reprend seul quand le total du cloud revient (s’il revient au-dessus de la référence après un saut accepté, il est retenu comme un saut, accepté en deux clics). Un onduleur retiré ou remplacé : choisissez « Chaque onduleur » pour l’index de production. Rien à accepter.',
     },
     /** First click: what a second click would take, nothing taken yet. `drops`: drops held, never taken. */
     list: (items, within, drops = 0) => ({

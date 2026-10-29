@@ -73,7 +73,8 @@ So that an odd value is never counted:
   restart. Neither time nor repetition confirms it;
 - a **drop is never accepted**: it comes from an inverter offline, a partial
   total or an odd value back to normal; the index goes on by itself when the
-  total comes back. An inverter removed or replaced: choose "Each inverter"
+  total comes back; if it comes back above the reference after an accepted
+  jump, it is held as a jump (two clicks). An inverter removed or replaced: choose "Each inverter"
   (it becomes a new device, without a jump);
 - to take a **jump**, click **"Accept the held index"**: the first click lists
   the jumps held and accepts nothing; a second click within 5 minutes accepts
